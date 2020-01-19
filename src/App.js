@@ -11,35 +11,61 @@ class App extends Component {
 
   state = {
     users: [],
-    loading: false
+    loading: false,
+    showClear: false,
+    showReset: false
   };
 
-  async componentDidMount() {
-    this.setState({ loading: true });
-    const res = await axios.get(`https://api.github.com/users?client_id=${process.env.REACT_APP_GITHUB_CLIENT_ID}&client_secret=${process.env.REACT_APP_GITHUB_CLIENT_SECRET}`);
-    this.setState({ users: res.data, loading: false });
+   componentDidMount() {
+    this.resetUsers()
   }
 
+  // search users for inputed text - if text empty: resets to all
   searchUsers = async (searchText) => {
     this.setState({loading: true})
-    const res = await axios.get(`https://api.github.com/search/users?q=${searchText}&client_id=${process.env.REACT_APP_GITHUB_CLIENT_ID}&client_secret=${process.env.REACT_APP_GITHUB_CLIENT_SECRET}`)
-    this.setState({ users: res.data.items, loading: false})
+    const res = 
+    searchText === '' ?
+    await axios.get(`https://api.github.com/users?client_id=${process.env.REACT_APP_GITHUB_CLIENT_ID}&client_secret=${process.env.REACT_APP_GITHUB_CLIENT_SECRET}`)
+    : await axios.get(`https://api.github.com/search/users?q=${searchText}&client_id=${process.env.REACT_APP_GITHUB_CLIENT_ID}&client_secret=${process.env.REACT_APP_GITHUB_CLIENT_SECRET}`)
+    this.setState({ 
+                    users: searchText === '' ? res.data : res.data.items, 
+                    loading: false,  
+                    showClear: true, 
+                    showReset: true
+                  })
   } 
+
+  // show all users
+  resetUsers = async () => {
+    this.setState({ loading: true });
+    const res = await axios.get(`https://api.github.com/users?client_id=${process.env.REACT_APP_GITHUB_CLIENT_ID}&client_secret=${process.env.REACT_APP_GITHUB_CLIENT_SECRET}`);
+    this.setState({ users: res.data, loading: false,  showClear: false, showReset: false });
+  }
+
+  // clears users from state
+  clearUsers = async() => {
+    this.setState({ loading: true });
+    this.setState({users: [], loading: false, showClear: false})
+  }
   render() {
+
+    const {showClear, showReset, loading, users} = this.state
+
     return (
       <div>
         <Navbar />
         <div className="container">
-          <Search searchUsers={this.searchUsers}/>
-          <Users loading={this.state.loading} users={this.state.users} />
+          <Search 
+            searchUsers={this.searchUsers} 
+            clearUsers={this.clearUsers} 
+            showClear={showClear} 
+            resetUsers={this.resetUsers}
+            showReset={showReset}
+          />
+          <Users loading={loading} users={users} />
         </div>
       </div>
     );
-    // JSX:
-    // must always have one parent element
-    // always wrapped in one div OR you can use reactFragment (which is like a ghost element)
-    //  "className" not "class" is used
-    // the "for" attribute => "htmlFor"
   }
 }
 
